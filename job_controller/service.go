@@ -18,12 +18,16 @@ import (
 	"strconv"
 	"strings"
 
+	commonv1 "github.com/kubeflow/common/operator/v1"
 	commonutil "github.com/kubeflow/common/util"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/kubernetes/pkg/controller"
+	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 // When a service is created, enqueue the controller that manages it and update its expectations.
@@ -178,13 +182,13 @@ func (jc *JobController) ReconcileServices(
 		return err
 	}
 
-	serviceSlices := jc.GetServiceSlices(services, replicas, util.LoggerForReplica(job, rt))
+	serviceSlices := jc.GetServiceSlices(services, replicas, commonutil.LoggerForReplica(job, rt))
 
 	for index, serviceSlice := range serviceSlices {
 		if len(serviceSlice) > 1 {
-			util.LoggerForReplica(job, rt).Warningf("We have too many services for %s %d", rt, index)
+			commonutil.LoggerForReplica(job, rt).Warningf("We have too many services for %s %d", rt, index)
 		} else if len(serviceSlice) == 0 {
-			util.LoggerForReplica(job, rt).Infof("need to create new service: %s-%d", rt, index)
+			commonutil.LoggerForReplica(job, rt).Infof("need to create new service: %s-%d", rt, index)
 			err = jc.CreateNewService(job, rtype, spec, strconv.Itoa(index))
 			if err != nil {
 				return err
